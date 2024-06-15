@@ -33,7 +33,7 @@ def update_control_buffer(
     idx_signal: int = 0,
 ) -> int:
 
-    data = sw.unfold_buffer()
+    data = sw.unfold_buffer()[:, -1:]
 
     # Use pandas rolling function for speed -> conversion for n=500 input buffer
     # takes about 7us on M1
@@ -43,6 +43,7 @@ def update_control_buffer(
     # logger.debug(f"Derived from buffer data: {mean=}, {std=}")
     df["upper"] = mean + std * n_std
     df["lower"] = mean - std * n_std
+    df["mean"] = mean
 
     if sw.n_new == 0:
         # logger.debug(f"{sw.n_new=} - no new data")
@@ -50,7 +51,7 @@ def update_control_buffer(
 
     new = min(control_buffer.shape[0] - curri, sw.n_new, data.shape[0])
 
-    control_buffer[curri : curri + new] = df[["upper", idx_signal, "lower"]][
+    control_buffer[curri : curri + new] = df[["upper",  idx_signal, "lower", "mean"]][
         -new:
     ]
 
@@ -61,11 +62,11 @@ def derive_stim_state(buffer: np.ndarray) -> str:
     """Derive control from the control buffer"""
     ctrl = np.asarray([np.nan] * len(buffer))
 
-    # signal > upper limit
-    ctrl[buffer[:, 1] > buffer[:, 0]] = 1
+    # signal < lower limit --> classifier output for LDA label with >0 == stim ON
+    ctrl[buffer[:, 1] < buffer[:, 2]] = 1
 
-    # signal < lower limit
-    ctrl[buffer[:, 1] < buffer[:, 2]] = 0
+    # signal > upper limit
+    ctrl[buffer[:, 1] > buffer[:, 0]] = 0
 
     if all(np.isnan(ctrl)):
         return "no_change"
@@ -73,7 +74,7 @@ def derive_stim_state(buffer: np.ndarray) -> str:
         # take the last value of currently processed buffer
         last_v = ctrl[~np.isnan(ctrl)][-1]
 
-    logger.debug(f"Derived control state: {last_v=}, {ctrl[-5:]=}")
+    # logger.debug(f"Derived control state: {last_v=}, {ctrl[-5:]=}")
 
     condition_map = {1: "on", 0: "off"}
 
@@ -140,23 +141,27 @@ def process_loop(
     # Note: this buffer will always be filled from 0 onwards until the data
     # if dumped to the outlet, the buffer used for the calculation of the
     # moving averages stems will be the StreamWatchers
-    control_buffer = np.zeros((int(cfg["outbuffer"]["size_s"] * freq_hz), 3))
+    control_buffer = np.zeros((int(cfg["outbuffer"]["size_s"] * freq_hz), 4))
     curri = 0
 
     time_horizon_n = int(cfg["bollinger"]["time_horizon_s"] * freq_hz)
     n_std = cfg["bollinger"]["n_std"]
 
-    tlast = time.perf_counter_ns()
-    tstart = time.perf_counter_ns()
     control_stim = False
-    while not ctx.stop_event.is_set():
-        now = time.perf_counter_ns()
 
-        if now - tlast > dt * 10**9:
+    sent_samples = 0
+    start_time = pylsl.local_clock()
+    last_update = pylsl.local_clock()
+
+    while not ctx.stop_event.is_set():
+        dt_s = pylsl.local_clock() - last_update 
+
+        if dt_s > dt:
 
             # update stream watcher
             ctx.sw.update()
-            tlast = now
+            last_update = pylsl.local_clock()
+
             added = update_control_buffer(
                 ctx.sw, control_buffer, time_horizon_n, n_std, curri
             )
@@ -185,11 +190,10 @@ def process_loop(
 
             else:
                 # Time to wait to fill up buffer
-                if (time.perf_counter_ns() - tstart) * 1e-9 > cfg["stim"][
+                if (pylsl.local_clock() - start_time) > cfg["stim"][
                     "initial_delay_s"
                 ]:
                     control_stim = True
-                    logger.debug("Control started")
 
             # send to lsl
             chunk = control_buffer[:curri, :]
@@ -198,4 +202,5 @@ def process_loop(
             ctx.sw.n_new = 0
             curri = 0
         else:
-            sleep_s(0.7 * (dt - (tlast - now) * 1e-9))
+            tsleep = 0.8 * (dt - dt_s)
+            sleep_s(tsleep)

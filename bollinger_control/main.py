@@ -17,7 +17,7 @@ def init_lsl_outlet(cfg: dict) -> pylsl.StreamOutlet:
     """Initialize the LSL outlet"""
 
     cfg_out = cfg["lsl_outlet"]
-    n_channels = 3
+    n_channels = 4
 
     info = pylsl.StreamInfo(
         cfg_out["name"],
@@ -29,7 +29,7 @@ def init_lsl_outlet(cfg: dict) -> pylsl.StreamOutlet:
 
     # enrich a channel name
     chns = info.desc().append_child("channels")
-    for chn in ["min", "decoded_value", "max"]:
+    for chn in ["min", "decoded_value", "max", "mean"]:
         ch = chns.append_child("channel")
         ch.append_child_value("label", f"bollinger_control_{chn}")
         ch.append_child_value("unit", "AU")
