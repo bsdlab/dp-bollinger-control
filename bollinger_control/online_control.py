@@ -169,6 +169,7 @@ def process_loop(
 
             if control_stim:
                 # interpret stimulation
+                # logger.info(f"{added=}, {control_buffer[:1]}")
                 stim = derive_stim_state(control_buffer[:curri])
 
                 if stim != "no_change":
@@ -202,5 +203,7 @@ def process_loop(
             ctx.sw.n_new = 0
             curri = 0
         else:
-            tsleep = 0.8 * (dt - dt_s)
-            sleep_s(tsleep)
+            # keeping the clock more simple for better resource usage
+            time.sleep(dt)
+            # tsleep = 0.8 * (dt - dt_s)
+            # sleep_s(tsleep)

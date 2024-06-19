@@ -40,5 +40,5 @@ second_phase_ampl_mA=6
 second_phase_width_ms=0.06
 freq_hz=130
 duration_s=2000
-return_channel=10273
+return_channel=10279
 
