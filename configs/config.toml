@@ -1,0 +1,44 @@
+[stream_to_query]
+stream = "decoded_ecog"
+buffer_size_s = 5   # should be larger than the time_horizon_s of [bollinger]
+
+[lsl_outlet]
+name = "bollinger_bands"
+nominal_freq_hz = "derive"
+type = "bollinger_ts"
+format = "float32"
+
+[outbuffer]
+size_s = 10
+
+[bollinger]
+time_horizon_s = 2
+n_std = 2           # number of standard deviations to use for bollinger strategy
+
+[stim]
+dp_module_name = "dareplane-ao-communication"
+initial_delay_s = 2          # delay which is used to fill the buffer / stabilize the data for bollinger band calculation
+
+[stim.gatekeeper]
+stimulator = "AO"    # AO, CorTecEvalKit
+max_amp_mA = 1
+max_width_ms = 0.2
+freq_range = [130, 130]
+black_list_freq = []
+white_list_contacts = ['10272', '10273']
+grace_period_s = 2        # number of seconds to wait until any new command can be sent after a stimulation change was sent out 
+
+# for the AO stimulator
+# check: bollinger_control/online_control.py:create_control_cmd_ao()
+[stim.stim_on]
+stim_channel=10272
+first_phase_delay_ms=0
+first_phase_ampl_mA=-1
+first_phase_width_ms=0.06
+second_phase_delay_ms=0
+second_phase_ampl_mA=1
+second_phase_width_ms=0.06
+freq_hz=130
+duration_s=2000
+return_channel=10273
+
