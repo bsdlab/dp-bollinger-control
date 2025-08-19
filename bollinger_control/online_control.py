@@ -7,7 +7,6 @@ import pandas as pd
 import pylsl
 from dareplane_utils.default_server.server import DefaultServer
 from dareplane_utils.stream_watcher.lsl_stream_watcher import StreamWatcher
-from dareplane_utils.general.time import sleep_s
 
 from bollinger_control.gate_keeper import GateKeeper
 from bollinger_control.utils.logging import logger
@@ -32,7 +31,6 @@ def update_control_buffer(
     curri: int,
     idx_signal: int = 0,
 ) -> int:
-
     data = sw.unfold_buffer()[:, -1:]
 
     # Use pandas rolling function for speed -> conversion for n=500 input buffer
@@ -51,7 +49,7 @@ def update_control_buffer(
 
     new = min(control_buffer.shape[0] - curri, sw.n_new, data.shape[0])
 
-    control_buffer[curri : curri + new] = df[["upper",  idx_signal, "lower", "mean"]][
+    control_buffer[curri : curri + new] = df[["upper", idx_signal, "lower", "mean"]][
         -new:
     ]
 
@@ -149,15 +147,14 @@ def process_loop(
 
     control_stim = False
 
-    sent_samples = 0
+    # sent_samples = 0
     start_time = pylsl.local_clock()
     last_update = pylsl.local_clock()
 
     while not ctx.stop_event.is_set():
-        dt_s = pylsl.local_clock() - last_update 
+        dt_s = pylsl.local_clock() - last_update
 
         if dt_s > dt:
-
             # update stream watcher
             ctx.sw.update()
             last_update = pylsl.local_clock()
@@ -191,9 +188,7 @@ def process_loop(
 
             else:
                 # Time to wait to fill up buffer
-                if (pylsl.local_clock() - start_time) > cfg["stim"][
-                    "initial_delay_s"
-                ]:
+                if (pylsl.local_clock() - start_time) > cfg["stim"]["initial_delay_s"]:
                     control_stim = True
 
             # send to lsl

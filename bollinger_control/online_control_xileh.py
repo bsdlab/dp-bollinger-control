@@ -2,11 +2,11 @@
 
 import threading
 import time
-import tomllib
 from pathlib import Path
 
 import numpy as np
 import pylsl
+import tomllib
 from dareplane_utils.stream_watcher.lsl_stream_watcher import StreamWatcher
 from xileh import xPData, xPipeline
 
@@ -110,8 +110,7 @@ def calc_bollinger_bands(pdata: xPData) -> xPData:
 def init_lsl_outlet(pdata: xPData) -> xPData:
     cfg = pdata.config.data["lsl_outlet"]
     bufferlen = (
-        pdata.config.data["outbuffer"]["size_s"]
-        * pdata.stream_watcher.header["srate"]
+        pdata.config.data["outbuffer"]["size_s"] * pdata.stream_watcher.header["srate"]
     )
     n_channels = 3
 
@@ -198,11 +197,9 @@ def interpret_control(pdata: xPData) -> xPData:
     dgrace = time.time() - tlast_changed
 
     if dgrace > pdata.config.data["bollinger"]["grace_s"]:
-        if (
-            val < lower
-        ):  # Assuming that a higher value is closer to the on state
+        if val < lower:  # Assuming that a higher value is closer to the on state
             logger.debug("CONTROL WOULD SEND STIM ON")
-        elif val > higher:
+        elif val > upper:
             logger.debug("CONTROL WOULD SEND STIM OFF")
     else:
         logger.debug("GRACE PERIOD NOT OVER YET")

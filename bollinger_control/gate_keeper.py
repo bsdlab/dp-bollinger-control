@@ -31,7 +31,6 @@ class GateKeeper:
         return validation_func_map[self.stimulator](pcomm, payload)
 
     def validate_ao_stim_command(self, pcomm: str, config: dict) -> bool:
-
         # Check command against current state -> only continue if command would
         # induce a change
         if pcomm == "STARTSTIM" and self.stim_state == "on":
@@ -58,9 +57,7 @@ class GateKeeper:
         checks.append(self.check_grace_period())
 
         # check stim channel in white list
-        checks.append(
-            self.check_stim_channel_in_white_list(config["StimChannel"])
-        )
+        checks.append(self.check_stim_channel_in_white_list(config["StimChannel"]))
 
         # Check that stim command is charge balanced
         checks.append(
@@ -79,22 +76,15 @@ class GateKeeper:
         checks.append(self.check_amplitude(config["SecondPhaseAmpl_mA"]))
 
         # Check that width is in limit
-        checks.append(
-            self.check_stimulation_width(config["FirstPhaseWidth_mS"])
-        )
+        checks.append(self.check_stimulation_width(config["FirstPhaseWidth_mS"]))
 
-        checks.append(
-            self.check_stimulation_width(config["SecondPhaseWidth_mS"])
-        )
+        checks.append(self.check_stimulation_width(config["SecondPhaseWidth_mS"]))
 
         # check valid frequency
-        checks.append(
-            self.check_frequency_in_admissible_range(config["Freq_hZ"])
-        )
+        checks.append(self.check_frequency_in_admissible_range(config["Freq_hZ"]))
 
         # all checks valid
         if all(checks):
-
             # logger.debug("Valid stimulation command - resetting grace period")
             self.last_stim_command_time_ns = time.perf_counter_ns()
             return True
@@ -124,9 +114,7 @@ class GateKeeper:
 
         return dt > self.grace_period_s
 
-    def check_charge_balance(
-        self, a1: float, w1: float, a2: float, w2: float
-    ) -> bool:
+    def check_charge_balance(self, a1: float, w1: float, a2: float, w2: float) -> bool:
         return a1 * w1 + a2 * w2 == 0
 
     def check_stim_channel_in_white_list(self, channel: str | int) -> bool:

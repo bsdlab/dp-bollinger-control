@@ -1,9 +1,8 @@
 import threading
-import tomllib
-from dataclasses import dataclass, field
 from pathlib import Path
 
 import pylsl
+import tomllib
 from dareplane_utils.default_server.server import DefaultServer
 from dareplane_utils.stream_watcher.lsl_stream_watcher import StreamWatcher
 from fire import Fire
@@ -41,7 +40,6 @@ def init_lsl_outlet(cfg: dict) -> pylsl.StreamOutlet:
 
 
 def init_marker_outler() -> pylsl.StreamOutlet:
-
     stream_info = pylsl.StreamInfo(
         name="BollingerControlMarkerStream",
         type="Markers",

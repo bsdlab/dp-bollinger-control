@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from scipy.io import loadmat
-from scipy.signal import butter, hilbert, sosfiltfilt, decimate
+from scipy.signal import butter, decimate, hilbert, sosfiltfilt
 
 d = loadmat(
     r"D:\data\dareplane\<path_to_ao_matfile>.mat",
@@ -76,9 +76,7 @@ def calibrate_to_switching_rate(
             lower = mean - std * n_std
             upper = mean + std * n_std
 
-            n_switchings = find_switchings_n_switchings(
-                decoder_signal, upper, lower
-            )
+            n_switchings = find_switchings_n_switchings(decoder_signal, upper, lower)
 
             res.append(
                 {
